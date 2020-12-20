@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { AwsIotStack } from '../lib/awsiot-stack';
+import { AwsIotStack } from '../lib/aws-iot-stack';
+import { AwsIotDashboardStack } from '../lib/aws-iot-dashboard-stack';
 
 const app = new cdk.App();
 
@@ -15,3 +16,4 @@ const props = {
 }
 
 new AwsIotStack(app, 'AwsIotStack', props);
+new AwsIotDashboardStack(app, 'AwsIotDashboardStack', props);

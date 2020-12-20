@@ -2,7 +2,7 @@
   "name": "awsiot",
   "version": "0.1.0",
   "bin": {
-    "awsiot": "dist/bin/awsiot.js"
+    "awsiot": "dist/bin/aws-iot.js"
   },
   "scripts": {
     "build": "tsc",

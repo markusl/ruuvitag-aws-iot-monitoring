@@ -1,10 +1,18 @@
 # Building a RuuviTag weather monitoring dashboard using AWS IOT
 
+What you'll need for this:
+
+* An AWS account <https://console.aws.amazon.com>
+* A RuuviTag device <https://shop.ruuvi.com>
+* A Raspberry Zero W (or a larger one) <https://raspberrypi.org/products/raspberry-pi-zero-w>
+
 ![Dependency Graph](ruuvitag.drawio.png)
 
 ## Setup
 
 ### 1. RuuviTag
+
+![Ruuvitag PCB](ruuvitag-pcb1.jpg)
 
 Just unbox the Ruuvitag and verify the functionality with RuuviStation mobile application.
 
@@ -12,12 +20,15 @@ Just unbox the Ruuvitag and verify the functionality with RuuviStation mobile ap
 
 Check out the headless setup instructions <https://www.raspberrypi.org/documentation/configuration/wireless/headless.md>.
 
+Note: You might want to login using SSH keys instead of the default username/password combo.
+
 ### 3. Setup this repository to Raspberry Pi device
 
 1. `git clone https://github.com/markusl/ruuvitag-aws-iot-monitoring.git`
 2. Install the prerequisites:
 
 ```sh
+cd app-old/
 sudo apt-get install libudev-dev libusb-1.0-0-dev
 npm install
 ```
@@ -32,7 +43,10 @@ Then deploy the AWS IoT cloud infrastructure:
 cd awsiot/
 npm i -g aws-cdk
 npm install
-cdk deploy
+# Deploy the IoT device configuration
+cdk deploy AwsIotStack
+# Deploy the CloudWatch dashboard
+cdk deploy AwsIotDashboardStack
 ```
 
 ### 5. Configure and run the application
@@ -46,5 +60,11 @@ Run the application:
 
 ```sh
 sudo apt-get install screen
-screen app/start-monitoring.sh
+screen app-old/start-monitoring.sh
 ```
+
+### 6. Configure CloudWatch dashboard for sharing
+
+You can share the created dashboard publicly in the AWS CloudWatch console.
+
+![CloudWatch dashboard example](ruuvitag-cloudwatch-dashboard.png)

@@ -5,6 +5,8 @@ import {
 } from 'aws-cdk-lib';
 import { AwsIotCertificateResource } from './aws-iot-certificate-resource';
 
+export const RuuviTagMetricNamespacePrefix = 'RuuviTag';
+
 const metricPolicy = (stack: cdk.Stack) => new iam.PolicyDocument({
   statements: [
     new iam.PolicyStatement({
@@ -29,7 +31,7 @@ const addRuuviTagEventRule = (scope: cdk.Construct, iotTopicPrefix: string, ruuv
         {
           cloudwatchMetric: {
             metricName: 'Temperature',
-            metricNamespace: `RuuviTag/${ruuviTagId}`,
+            metricNamespace: `${RuuviTagMetricNamespacePrefix}/${ruuviTagId}`,
             metricUnit: 'None',
             metricValue: '${temperature}',
             roleArn
@@ -38,7 +40,7 @@ const addRuuviTagEventRule = (scope: cdk.Construct, iotTopicPrefix: string, ruuv
         {
           cloudwatchMetric: {
             metricName: 'Humidity',
-            metricNamespace: `RuuviTag/${ruuviTagId}`,
+            metricNamespace: `${RuuviTagMetricNamespacePrefix}/${ruuviTagId}`,
             metricUnit: 'None',
             metricValue: '${humidity}',
             roleArn

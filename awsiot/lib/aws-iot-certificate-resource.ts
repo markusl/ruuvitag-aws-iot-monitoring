@@ -2,9 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import {
   custom_resources,
   aws_logs as logs,
-  aws_iot as iot,
   aws_iam as iam,
-  aws_cloudformation as cfn,
   aws_lambda as lambda,
   aws_lambda_nodejs as lambda_nodejs
 } from 'aws-cdk-lib';
