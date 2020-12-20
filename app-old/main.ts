@@ -4,6 +4,10 @@ const cmdLineProcess = require('aws-iot-device-sdk/examples/lib/cmdline');
 
 const awsIotTopicPrefix = 'ruuvitag/';
 
+// Send every nth measurement to the cloud
+const updateInterval = 60;
+let eventCounter = 0;
+
 function startRuuvitagListener(args) {
   const device = deviceModule({
     keyPath: args.privateKey,
@@ -22,8 +26,13 @@ function startRuuvitagListener(args) {
   ruuvi.on('found', (tag) => {
     console.log('RuuviTag found ' + tag.id);
     tag.on('updated', (data) => {
-      console.debug('RuuviTag updated ' + tag.id + ':\n' + JSON.stringify(data, null, '  '));
-      device.publish(awsIotTopicPrefix + tag.id, JSON.stringify(data));
+      if (eventCounter % updateInterval === 0) {
+        console.debug('RuuviTag updated ' + tag.id + ':\n' + JSON.stringify(data, null, '  '));
+        device.publish(awsIotTopicPrefix + tag.id, JSON.stringify(data));
+      } else {
+        process.stdout.write(eventCounter + '/' + updateInterval + '\r');
+      }
+      eventCounter++;
     });
   });
 
