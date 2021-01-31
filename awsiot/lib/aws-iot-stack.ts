@@ -1,7 +1,9 @@
+import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
 import {
   aws_iot as iot,
   aws_iam as iam,
+  aws_greengrassv2 as ggv2,
 } from 'aws-cdk-lib';
 import { AwsIotCertificateResource } from './aws-iot-certificate-resource';
 
@@ -23,7 +25,7 @@ const metricPolicy = (stack: cdk.Stack) => new iam.PolicyDocument({
     })]
 });
 
-const addRuuviTagEventRule = (scope: cdk.Construct, iotTopicPrefix: string, ruuviTagId: string, roleArn: string) => {
+const addRuuviTagEventRule = (scope: Construct, iotTopicPrefix: string, ruuviTagId: string, roleArn: string) => {
   new iot.CfnTopicRule(scope, `${ruuviTagId}Rule`, {
     ruleName: `RuuviTagEvents_${ruuviTagId}`,
     topicRulePayload: {
@@ -66,7 +68,7 @@ interface AwsIotStackProps {
 }
 
 export class AwsIotStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props: AwsIotStackProps) {
+  constructor(scope: Construct, id: string, props: AwsIotStackProps) {
     super(scope, id, props);
 
     const thingName = props.thingName;
@@ -114,7 +116,7 @@ export class AwsIotStack extends cdk.Stack {
     new iot.CfnThingPrincipalAttachment(this, 'ThingPrincipalAttachment', {
       principal: awsIotCertificateResource.certificateArn,
       thingName,
-    }).node.addDependency(iotThing);
+    }).addDependsOn(iotThing);
 
     new iot.CfnPolicyPrincipalAttachment(this, 'PolicyPrincipalAttachment', {
       principal: awsIotCertificateResource.certificateArn,
