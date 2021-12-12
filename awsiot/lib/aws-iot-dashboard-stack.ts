@@ -3,6 +3,7 @@ import {
   aws_cloudwatch as cw,
 } from 'aws-cdk-lib';
 import { RuuviTagMetricNamespacePrefix } from './aws-iot-stack';
+import { Construct } from 'constructs';
 
 interface AwsIotDashboardStackProps {
   readonly env?: cdk.Environment;
@@ -55,7 +56,7 @@ const createSecondRowWidgets = (ruuviTagId: string, region: string) => new cw.Gr
 });
 
 export class AwsIotDashboardStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props: AwsIotDashboardStackProps) {
+  constructor(scope: Construct, id: string, props: AwsIotDashboardStackProps) {
     super(scope, id, props);
     
     const firstRowWidgets = props.ruuviTagIds.flatMap((id) => createFirstRowWidgets(id, this.region));

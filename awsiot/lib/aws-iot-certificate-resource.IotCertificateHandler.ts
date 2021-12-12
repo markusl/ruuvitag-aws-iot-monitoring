@@ -67,7 +67,7 @@ const createUpdateHandler = async (event: AWSLambda.CloudFormationCustomResource
         }
       };
     } catch (e) {
-      const err: AWS.AWSError = e;
+      const err = e as AWS.AWSError;
       if (err.code !== 'ResourceExistsException') {
         throw e;
       }

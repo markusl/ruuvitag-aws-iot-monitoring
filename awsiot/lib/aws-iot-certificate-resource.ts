@@ -6,8 +6,9 @@ import {
   aws_lambda as lambda,
   aws_lambda_nodejs as lambda_nodejs
 } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
 
-export const createCertificateResourceProvider = (scope: cdk.Construct) => {
+export const createCertificateResourceProvider = (scope: Construct) => {
   const lambdaRole = new iam.Role(scope, 'CustomResourceLambdaRole', {
     assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
     managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('AWSIoTFullAccess')]
@@ -62,10 +63,10 @@ interface AwsIotCertificateResourceProps {
   readonly thingName: string;
 }
 
-export class AwsIotCertificateResource extends cdk.Construct {
+export class AwsIotCertificateResource extends Construct {
   public readonly certificateArn: string;
 
-  constructor(scope: cdk.Construct, id: string, props: AwsIotCertificateResourceProps) {
+  constructor(scope: Construct, id: string, props: AwsIotCertificateResourceProps) {
     super(scope, id);
 
     const awsIotCertificateProvider = createCertificateResourceProvider(this);
