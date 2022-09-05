@@ -2,13 +2,39 @@ import { io, http, iot, auth, mqtt } from 'aws-iot-device-sdk-v2';
 import { args, Args } from './args';
 const ruuvi = require('node-ruuvitag');
 
+interface RuuviTag {
+  id: string;
+  address: string;
+  addressType: string;
+  connectable: boolean;
+  on(event: 'found', handler: (tag: RuuviTag) => Promise<void>): void;
+  on(event: 'updated', handler: (data: RuuviData) => void): void;
+}
+
+interface RuuviData {
+  url: string;
+  dataFormat: number;
+  rssi: number;
+  temperature: string;
+  humidity: number;
+  pressure: number;
+  accelerationX: number;
+  accelerationY: number;
+  accelerationZ: number;
+  battery: number;
+  txPower: number;
+  movementCounter: number;
+  measurementSequenceNumber: number;
+  mac: string;
+}
+
 const yargs = require('yargs');
 yargs.command('*', false, (yargs: any) => { args }, main).parse();
 
 async function execute_session(connection: mqtt.MqttClientConnection, argv: Args) {
-  ruuvi.on('found', (tag) => {
+  ruuvi.on('found', (tag: RuuviTag) => {
     console.log('RuuviTag found ' + tag.id);
-    tag.on('updated', async (data) => {
+    tag.on('updated', async (data: RuuviData) => {
       console.debug('RuuviTag updated ' + tag.id + ':\n' + JSON.stringify(data, null, '  '));
       await connection.publish(argv.topicPrefix + tag.id, JSON.stringify(data), mqtt.QoS.AtLeastOnce);
     });
@@ -25,10 +51,7 @@ async function main(argv: Args) {
 
   let config_builder = null;
   if (argv.use_websocket) {
-    let proxy_options = undefined;
-    if (argv.proxy_host) {
-      proxy_options = new http.HttpProxyOptions(argv.proxy_host, argv.proxy_port);
-    }
+    const proxy_options = argv.proxy_host ?? new http.HttpProxyOptions(argv.proxy_host, argv.proxy_port);
 
     config_builder = iot.AwsIotMqttConnectionConfigBuilder.new_with_websockets({
       region: argv.signing_region,
@@ -57,7 +80,7 @@ async function main(argv: Args) {
   // connection.on('error', (error) => console.info(`Error ${JSON.stringify(error)}`));
   // connection.on('disconnect', () => console.info(`Disconnect`));
 
-  ruuvi.on('found', (tag) => {
+  ruuvi.on('found', (tag: RuuviTag) => {
     console.log('RuuviTag found ' + tag.id);
     tag.on('updated', async (data) => {
       console.debug('RuuviTag updated ' + tag.id + ':\n' + JSON.stringify(data, null, '  '));
