@@ -3,7 +3,7 @@ import * as cdk from 'aws-cdk-lib';
 import {
   aws_iot as iot,
   aws_iam as iam,
-  aws_greengrassv2 as ggv2,
+  aws_logs as logs,
 } from 'aws-cdk-lib';
 import { AwsIotCertificateResource } from './aws-iot-certificate-resource';
 
@@ -25,7 +25,7 @@ const metricPolicy = (stack: cdk.Stack) => new iam.PolicyDocument({
     })]
 });
 
-const addRuuviTagEventRule = (scope: Construct, iotTopicPrefix: string, ruuviTagId: string, roleArn: string) => {
+const addRuuviTagEventRule = (scope: Construct, iotTopicPrefix: string, ruuviTagId: string, roleArn: string, errorLog: logs.LogGroup) => {
   new iot.CfnTopicRule(scope, `${ruuviTagId}Rule`, {
     ruleName: `RuuviTagEvents_${ruuviTagId}`,
     topicRulePayload: {
@@ -49,10 +49,16 @@ const addRuuviTagEventRule = (scope: Construct, iotTopicPrefix: string, ruuviTag
           }
         }
       ],
+      awsIotSqlVersion: '2016-03-23',
       sql: `SELECT temperature,humidity FROM '${iotTopicPrefix}/${ruuviTagId}'`,
       ruleDisabled: false,
       // Is it possible to specify a log group for errors?
-      //errorAction:
+      errorAction: {
+        cloudwatchLogs: {
+          logGroupName: errorLog.logGroupName,
+          roleArn,
+        },
+      },
     }
   });
 }
@@ -109,7 +115,10 @@ export class AwsIotStack extends cdk.Stack {
         putMetricsPolicy: metricPolicy(this),
       }
     });
-    props.ruuviTagIds.forEach((id) => addRuuviTagEventRule(this, props.iotTopicPrefix, id, putMetricRole.roleArn));
+
+    const errorLog = new logs.LogGroup(this, 'ErrorLog');
+    props.ruuviTagIds.forEach((id) =>
+      addRuuviTagEventRule(this, props.iotTopicPrefix, id, putMetricRole.roleArn, errorLog));
 
     const awsIotCertificateResource = new AwsIotCertificateResource(this, 'AwsIotCertificateResource', { thingName });
 
