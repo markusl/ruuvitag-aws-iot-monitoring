@@ -15,7 +15,7 @@ const props = {
     region: 'eu-west-1'
   },
   /** List of RuuviTag device id's from where the data is collected. */
-  ruuviTagIds: ['d2285bb103f7']
+  ruuviTagIds: ['d2285bb103f7', 'ce85b8d5e92b'],
 }
 
 new AwsIotStack(app, 'AwsIotStack', props);

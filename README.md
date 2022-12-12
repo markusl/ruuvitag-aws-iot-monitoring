@@ -24,14 +24,28 @@ Note: You might want to login using SSH keys instead of the default username/pas
 
 ### 3. Setup this repository to Raspberry Pi device
 
-1. `git clone https://github.com/markusl/ruuvitag-aws-iot-monitoring.git`
-2. Install the prerequisites:
+1. Install Node.js
+    * Use NVM <https://github.com/nvm-sh/nvm>
+2. `git clone https://github.com/markusl/ruuvitag-aws-iot-monitoring.git`
+3. Install the prerequisites:
 
-```sh
-cd app-old/
-sudo apt-get install libudev-dev libusb-1.0-0-dev
-npm install
-```
+    ```sh
+    cd app-old/
+    sudo apt-get install libudev-dev libusb-1.0-0-dev
+    npm install
+    ```
+
+4. Enable bluetooth access without sudo (<https://github.com/sandeepmistry/noble#running-on-linux>)
+
+    ```sh
+    sudo setcap cap_net_raw+eip $(eval readlink -f `which node`)
+    ```
+
+5. Enable automatic startup on boot: `sudo nano /etc/rc.local` and add
+
+    ```sh
+    PATH=$PATH:/home/pi/.nvm/versions/node/v16.17.0/bin && cd /home/pi/ruuvitag-aws-iot-monitoring/app-old && sh start-monitoring.sh &
+    ```
 
 ### 4. Configure AWS IoT device
 

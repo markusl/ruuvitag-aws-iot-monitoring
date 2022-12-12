@@ -49,7 +49,7 @@ export const createCertificateResourceProvider = (scope: Construct) => {
 
   const onEvent = new lambda_nodejs.NodejsFunction(scope, 'IotCertificateHandler', {
     timeout: cdk.Duration.seconds(30),
-    runtime: lambda.Runtime.NODEJS_12_X,
+    runtime: lambda.Runtime.NODEJS_16_X,
     role: lambdaRole,
     logRetention: logs.RetentionDays.ONE_DAY,
   });
