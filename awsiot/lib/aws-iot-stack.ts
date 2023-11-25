@@ -125,7 +125,7 @@ export class AwsIotStack extends cdk.Stack {
     new iot.CfnThingPrincipalAttachment(this, 'ThingPrincipalAttachment', {
       principal: awsIotCertificateResource.certificateArn,
       thingName,
-    }).addDependsOn(iotThing);
+    }).addDependency(iotThing);
 
     new iot.CfnPolicyPrincipalAttachment(this, 'PolicyPrincipalAttachment', {
       principal: awsIotCertificateResource.certificateArn,
