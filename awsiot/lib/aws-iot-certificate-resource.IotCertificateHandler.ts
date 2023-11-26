@@ -1,5 +1,5 @@
 import * as AWS from 'aws-sdk';
-import * as AWSLambda from 'aws-lambda';
+import type * as AWSLambda from 'aws-lambda';
 import { OnEventResponse } from './response';
 
 const sm = new AWS.SecretsManager();

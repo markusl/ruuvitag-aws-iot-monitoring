@@ -64,7 +64,7 @@ const createWeatherValueWidgets = (ruuviTagId: string, region: string) => {
       },
     })],
     region,
-    title: 'Ilmankosteus %',
+    title: 'Ilmankosteus (%)',
     width: 6,
     height: 3,
   });
@@ -73,13 +73,6 @@ const createWeatherValueWidgets = (ruuviTagId: string, region: string) => {
 
 const createTempGraphWidget = (ruuviTagId: string, region: string) => new cw.GraphWidget({
   left: [
-    new cw.Metric({
-      namespace: `${RuuviTagMetricNamespacePrefix}/${ruuviTagId}`,
-      metricName: 'Temperature',
-      label: 'Sisälämpötila',
-      statistic: 'Average',
-      period: cdk.Duration.minutes(15),
-    }),
     new cw.Metric({
       namespace: 'Weather',
       metricName: 'Temperature',
@@ -90,6 +83,15 @@ const createTempGraphWidget = (ruuviTagId: string, region: string) => new cw.Gra
       statistic: 'Average',
       period: cdk.Duration.minutes(15),
     })],
+  right: [
+    new cw.Metric({
+      namespace: `${RuuviTagMetricNamespacePrefix}/${ruuviTagId}`,
+      metricName: 'Temperature',
+      label: 'Sisällä',
+      statistic: 'Average',
+      period: cdk.Duration.minutes(15),
+    }),
+  ],
   region,
   title: 'Lämpötilan kehitys (Celcius)',
   view: cw.GraphWidgetView.TIME_SERIES,
@@ -97,6 +99,10 @@ const createTempGraphWidget = (ruuviTagId: string, region: string) => new cw.Gra
   height: 6,
   period: cdk.Duration.days(7),
   leftYAxis: {
+    label: "Celsius",
+    showUnits: false,
+  },
+  rightYAxis: {
     min: 5,
     max: 25,
     label: "Celsius",
@@ -107,13 +113,6 @@ const createTempGraphWidget = (ruuviTagId: string, region: string) => new cw.Gra
 const createHumidityGraphWidget = (ruuviTagId: string, region: string) => new cw.GraphWidget({
   left: [
     new cw.Metric({
-      namespace: `${RuuviTagMetricNamespacePrefix}/${ruuviTagId}`,
-      metricName: 'Humidity',
-      label: 'Sisällä',
-      statistic: 'Average',
-      period: cdk.Duration.minutes(15),
-    }),
-    new cw.Metric({
       namespace: 'Weather',
       metricName: 'Humidity',
       dimensionsMap: {
@@ -123,6 +122,15 @@ const createHumidityGraphWidget = (ruuviTagId: string, region: string) => new cw
       statistic: 'Average',
       period: cdk.Duration.minutes(15),
     })],
+  right: [
+    new cw.Metric({
+      namespace: `${RuuviTagMetricNamespacePrefix}/${ruuviTagId}`,
+      metricName: 'Humidity',
+      label: 'Sisällä',
+      statistic: 'Average',
+      period: cdk.Duration.minutes(15),
+    }),
+  ],
   region,
   title: 'Ilmankosteus %',
   view: cw.GraphWidgetView.TIME_SERIES,
@@ -132,6 +140,10 @@ const createHumidityGraphWidget = (ruuviTagId: string, region: string) => new cw
   leftYAxis: {
     min: 20,
     max: 100,
+    label: "Humidity %",
+    showUnits: false,
+  },
+  rightYAxis: {
     label: "Humidity %",
     showUnits: false,
   },
