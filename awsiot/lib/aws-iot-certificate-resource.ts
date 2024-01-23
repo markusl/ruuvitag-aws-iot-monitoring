@@ -49,9 +49,11 @@ export const createCertificateResourceProvider = (scope: Construct) => {
 
   const onEvent = new lambda_nodejs.NodejsFunction(scope, 'IotCertificateHandler', {
     timeout: cdk.Duration.seconds(30),
-    runtime: lambda.Runtime.NODEJS_16_X,
+    runtime: lambda.Runtime.NODEJS_20_X,
     role: lambdaRole,
-    logRetention: logs.RetentionDays.ONE_DAY,
+    logGroup: new logs.LogGroup(scope, 'IotCertificateHandlerLogs', {
+      retention: logs.RetentionDays.ONE_DAY,
+    }),
   });
   return new custom_resources.Provider(scope, 'AwsIotCertificateProvider', {
     onEventHandler: onEvent,
@@ -79,6 +81,7 @@ export class AwsIotCertificateResource extends Construct {
       resourceType: `Custom::${props.thingName}_Resource`
     });
     const certificateId = awsIotCertificateResource.getAttString('CertificateId');
+
     new cdk.CfnOutput(this, 'AwsIotCertificateIdOutput', {
       exportName: `AwsIotCertificateId-${props.thingName}`,
       value: certificateId,

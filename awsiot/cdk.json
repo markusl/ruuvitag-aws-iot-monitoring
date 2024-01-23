@@ -1,5 +1,6 @@
 {
   "app": "npx ts-node bin/aws-iot.ts",
   "context": {
+    "@aws-cdk/customresources:installLatestAwsSdkDefault": false
   }
 }

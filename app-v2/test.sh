@@ -1,4 +1,4 @@
-npx ts-node main \
+npx ts-node test \
   --topic_prefix=RuuviTag \
   --private_key=../keys/RaspberryPi.private.key \
   --client_certificate=../keys/RaspberryPi.cert.pem \

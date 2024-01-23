@@ -1,71 +1,42 @@
 import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
 import {
-  aws_iot as iot,
-  aws_iam as iam,
+  aws_iot as cfniot,
   aws_logs as logs,
+  custom_resources as cr,
 } from 'aws-cdk-lib';
+import * as iot from '@aws-cdk/aws-iot-alpha';
+import * as iot_actions from '@aws-cdk/aws-iot-actions-alpha';
 import { AwsIotCertificateResource } from './aws-iot-certificate-resource';
 
 export const RuuviTagMetricNamespacePrefix = 'RuuviTag';
 
-const metricPolicy = (stack: cdk.Stack) => new iam.PolicyDocument({
-  statements: [
-    new iam.PolicyStatement({
-      actions: ['cloudwatch:PutMetricData'],
-      resources: ['*']
-    }),
-    new iam.PolicyStatement({
-      actions: [
-        'logs:CreateLogStream',
-        'logs:DescribeLogStreams',
-        'logs:PutLogEvents'
-      ],
-      resources: [`arn:aws:logs:${stack.region}:${stack.account}:log-group:/ruuvitag:*`]
-    })]
-});
+const addRuuviTagEventRule = (scope: Construct, iotTopicPrefix: string, ruuviTagId: string, errorLog: logs.LogGroup) => {
 
-const addRuuviTagEventRule = (scope: Construct, iotTopicPrefix: string, ruuviTagId: string, roleArn: string, errorLog: logs.LogGroup) => {
-  new iot.CfnTopicRule(scope, `${ruuviTagId}Rule`, {
-    ruleName: `RuuviTagEvents_${ruuviTagId}`,
-    topicRulePayload: {
-      actions: [
-        {
-          cloudwatchMetric: {
-            metricName: 'Temperature',
-            metricNamespace: `${RuuviTagMetricNamespacePrefix}/${ruuviTagId}`,
-            metricUnit: 'None',
-            metricValue: '${temperature}',
-            roleArn
-          }
-        },
-        {
-          cloudwatchMetric: {
-            metricName: 'Humidity',
-            metricNamespace: `${RuuviTagMetricNamespacePrefix}/${ruuviTagId}`,
-            metricUnit: 'None',
-            metricValue: '${humidity}',
-            roleArn
-          }
-        }
-      ],
-      awsIotSqlVersion: '2016-03-23',
-      sql: `SELECT temperature,humidity FROM '${iotTopicPrefix}/${ruuviTagId}'`,
-      ruleDisabled: false,
-      // Is it possible to specify a log group for errors?
-      errorAction: {
-        cloudwatchLogs: {
-          logGroupName: errorLog.logGroupName,
-          roleArn,
-        },
-      },
-    }
+  new iot.TopicRule(scope, `Temperature_Humidity_Rule_${ruuviTagId}`, {
+    sql: iot.IotSql.fromStringAsVer20160323(
+      `SELECT temperature,humidity FROM '${iotTopicPrefix}/${ruuviTagId}'`,
+    ),
+    errorAction: new iot_actions.CloudWatchLogsAction(errorLog),
+    actions: [
+      new iot_actions.CloudWatchPutMetricAction({
+        metricName: 'Temperature',
+        metricNamespace: `${RuuviTagMetricNamespacePrefix}/${ruuviTagId}`,
+        metricUnit: 'None',
+        metricValue: '${temperature}',
+      }),
+      new iot_actions.CloudWatchPutMetricAction({
+        metricName: 'Humidity',
+        metricNamespace: `${RuuviTagMetricNamespacePrefix}/${ruuviTagId}`,
+        metricUnit: 'None',
+        metricValue: '${humidity}',
+      }),
+    ],
+    
   });
 }
 
-interface AwsIotStackProps {
-  readonly env?: cdk.Environment;
-
+export interface AwsIotStackProps extends cdk.StackProps {
   readonly thingName: string;
 
   readonly iotTopicPrefix: string;
@@ -78,11 +49,11 @@ export class AwsIotStack extends cdk.Stack {
     super(scope, id, props);
 
     const thingName = props.thingName;
-    const iotThing = new iot.CfnThing(this, thingName, {
+    const iotThing = new cfniot.CfnThing(this, thingName, {
       thingName,
     });
 
-    const policy = new iot.CfnPolicy(this, `${thingName}Policy`, {
+    const policy = new cfniot.CfnPolicy(this, `${thingName}Policy`, {
       policyName: `${thingName}Policy`,
       policyDocument: {
         'Version': '2012-10-17',
@@ -109,27 +80,42 @@ export class AwsIotStack extends cdk.Stack {
       }
     });
 
-    const putMetricRole = new iam.Role(this, 'PutMetricRole', {
-      assumedBy: new iam.ServicePrincipal('iot.amazonaws.com'),
-      inlinePolicies: {
-        putMetricsPolicy: metricPolicy(this),
-      }
-    });
-
     const errorLog = new logs.LogGroup(this, 'ErrorLog');
     props.ruuviTagIds.forEach((id) =>
-      addRuuviTagEventRule(this, props.iotTopicPrefix, id, putMetricRole.roleArn, errorLog));
+      addRuuviTagEventRule(this, props.iotTopicPrefix, id, errorLog));
 
     const awsIotCertificateResource = new AwsIotCertificateResource(this, 'AwsIotCertificateResource', { thingName });
 
-    new iot.CfnThingPrincipalAttachment(this, 'ThingPrincipalAttachment', {
+    new cfniot.CfnThingPrincipalAttachment(this, 'ThingPrincipalAttachment', {
       principal: awsIotCertificateResource.certificateArn,
       thingName,
     }).addDependency(iotThing);
 
-    new iot.CfnPolicyPrincipalAttachment(this, 'PolicyPrincipalAttachment', {
+    new cfniot.CfnPolicyPrincipalAttachment(this, 'PolicyPrincipalAttachment', {
       principal: awsIotCertificateResource.certificateArn,
       policyName: policy.policyName ?? '',
+    });
+
+    const describeEndpoint = new cr.AwsCustomResource(this, 'describeEndpoint', {
+      onCreate: {
+        service: 'Iot',
+        action: 'DescribeEndpoint',
+        parameters: {
+          EndpointType: 'iot:Data-ATS',
+        },
+        physicalResourceId: cr.PhysicalResourceId.of('LogicalResourceId'),
+      },
+      logRetention: logs.RetentionDays.ONE_DAY,
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+        resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
+      }),
+    });
+
+    // Automatically output the endpoint address
+    // See https://docs.aws.amazon.com/general/latest/gr/iot-core.html#iot-core-data-plane-endpoints
+    new cdk.CfnOutput(this, 'IotEndpointAddress', {
+      exportName: 'IotEndpointAddress',
+      value: describeEndpoint.getResponseField('endpointAddress'),
     });
   }
 }

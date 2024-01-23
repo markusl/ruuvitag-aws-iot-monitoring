@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-* Install NodeJs 14
+* Install Node.js 20
 * Install AWS CDK `npm i -g aws-cdk`
 
 ## Configure

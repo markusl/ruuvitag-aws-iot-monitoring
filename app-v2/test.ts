@@ -13,6 +13,22 @@ interface RuuviTag {
   on(event: 'updated', handler: (data: RuuviData) => void): void;
 }
 
+const example = {
+  "dataFormat": 5,
+  "rssi": -76,
+  "temperature": 21.935,
+  "humidity": 38.8525,
+  "pressure": 99449,
+  "accelerationX": -32,
+  "accelerationY": 72,
+  "accelerationZ": 992,
+  "battery": 3006,
+  "txPower": 4,
+  "movementCounter": 31,
+  "measurementSequenceNumber": 16411,
+  "mac": "D2:28:5B:B1:03:F7"
+};
+
 interface RuuviData {
   url: string;
   dataFormat: number;
@@ -31,22 +47,6 @@ interface RuuviData {
 }
 
 yargs.command('*', false, (yargs: any) => { args }, main).parse();
-
-async function monitor_ruuvitag(connection: mqtt.MqttClientConnection, argv: Args) {
-  ruuvi.on('found', async (tag: RuuviTag) => {
-    console.log('RuuviTag found ' + tag.id);
-    tag.on('updated', async (data: RuuviData) => {
-      try {
-        const topic = `${argv.topic_prefix}/${tag.id}`;
-        console.debug(`RuuviTag updated ${topic}:\n` + JSON.stringify(data, null, '  '));
-        const result = await connection.publish(topic, JSON.stringify(data), mqtt.QoS.AtLeastOnce);
-        console.log('MQTT packet id ' + result.packet_id);
-      } catch(e) {
-        console.error(JSON.stringify(e));
-      }
-    });
-  });
-}
 
 async function main(argv: Args) {
   if (argv.verbosity != 'none') {
@@ -71,6 +71,11 @@ async function main(argv: Args) {
   connection.on('message', (topic, payload) => console.log(`${topic} -> ${JSON.stringify(payload)}`))
   connection.on('disconnect', () => console.info(`Disconnect`));
 
-  await connection.connect();
-  await monitor_ruuvitag(connection, argv);
+  const r = await connection.connect();
+  console.log(r);
+  const result = await connection.publish('RuuviTag/d026a90407b160717fecf3ee04b9dc1e', example, mqtt.QoS.AtLeastOnce);
+  console.log('MQTT packet id ' + result.packet_id);
+  const result2 = await connection.publish('RuuviTag/d026a90407b160717fecf3ee04b9dc1e', example, mqtt.QoS.AtLeastOnce);
+  console.log('MQTT packet id ' + result2.packet_id);
+  await connection.disconnect();
 }

@@ -1,9 +1,10 @@
-import * as AWS from 'aws-sdk';
 import type * as AWSLambda from 'aws-lambda';
 import { OnEventResponse } from './response';
+import { SecretsManager, ResourceExistsException } from "@aws-sdk/client-secrets-manager";
+import { IoT } from "@aws-sdk/client-iot";
 
-const sm = new AWS.SecretsManager();
-const iot = new AWS.Iot();
+const iot = new IoT({ });
+const sm = new SecretsManager({ });
 
 export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent): Promise<OnEventResponse | void> {
   console.log(event);
@@ -24,11 +25,11 @@ const deleteHandler = async (event: AWSLambda.CloudFormationCustomResourceEvent)
   await iot.updateCertificate({
     certificateId,
     newStatus: 'INACTIVE'
-  }).promise();
+  });
   await iot.deleteCertificate({
     certificateId,
     forceDelete: true
-  }).promise();
+  });
   const secretName = `${thingName}-Credentials`;
   sm.deleteSecret({
     SecretId: secretName,
@@ -42,9 +43,9 @@ const createUpdateHandler = async (event: AWSLambda.CloudFormationCustomResource
 
     const epResponse = await iot.describeEndpoint({
       endpointType: 'iot:Data-ATS'
-    }).promise();
+    });
 
-    const certResponse = await iot.createKeysAndCertificate({ setAsActive: true, }).promise();
+    const certResponse = await iot.createKeysAndCertificate({ setAsActive: true, });
     const credentials = {
       'certificatePem': certResponse.certificatePem,
       'privateKey': certResponse.keyPair?.PrivateKey,
@@ -55,7 +56,7 @@ const createUpdateHandler = async (event: AWSLambda.CloudFormationCustomResource
       const secretResponse = await sm.createSecret({
         Name: secretName,
         SecretString: JSON.stringify(credentials)
-      }).promise();
+      });
       console.log(`${secretName} created`);
       return {
         PhysicalResourceId: certResponse.certificateId ?? '',
@@ -67,14 +68,14 @@ const createUpdateHandler = async (event: AWSLambda.CloudFormationCustomResource
         }
       };
     } catch (e) {
-      const err = e as AWS.AWSError;
-      if (err.code !== 'ResourceExistsException') {
+      if (!(e instanceof ResourceExistsException)) {
         throw e;
       }
+
       const secretResponse = await sm.updateSecret({
         SecretId: secretName,
         SecretString: JSON.stringify(credentials),
-      }).promise();
+      });
       console.log(`${secretName} updated`);
       return {
         PhysicalResourceId: certResponse.certificateId ?? '',
